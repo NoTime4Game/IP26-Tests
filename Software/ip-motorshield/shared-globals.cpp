@@ -16,8 +16,10 @@ int driveLoopHzTarget = 40;
 int telemetryHzTarget = 20;
 
 int checkpointCounter = 0;
-int horizontalLineCounter = 0;
 int lastCheckpointTimeMs = 0;
+uint32_t runStartTimeMs = 0;
+int runStartCheckpointCounter = 0;
+uint32_t runCheckpointElapsedMs[13] = {0};
 
 bool stopAtCheckpoints = false;
 bool robotMotionEnabled = false;

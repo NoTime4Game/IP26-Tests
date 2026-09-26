@@ -112,10 +112,12 @@ void setMotorSpeeds(int signal, Motor &motorL, Motor &motorR)
     motorR.setSpeed(rightMotorSpeed);
 }
 
-void drivingLoop(PIDController &pid, QTRSensors &qtr, Motor &motorL, Motor &motorR)
+void drivingLoop(PIDController &pid, QTRSensors &qtr, Motor &motorL, Motor &motorR, Motorshield &shield)
 {
-    static bool lostLineRecoveryActive = false;
-    static bool turnRightOnLostLine = true;
+    static bool servoTriggeredAtTen = false;
+    static bool motor3TriggeredAtTwelve = false;
+    static bool motor3Running = false;
+    static uint32_t motor3StartMs = 0;
 
     int position = qtr.readLineBlack(qtrSensorValues);
     updateLineStatus();
@@ -136,45 +138,17 @@ void drivingLoop(PIDController &pid, QTRSensors &qtr, Motor &motorL, Motor &moto
             motorR.stop();
         }
         oldLineStatus = lineStatus;
-        lostLineRecoveryActive = false;
         return;
-    }
-
-    bool seesBlackLine = false;
-    for (uint8_t i = 0; i < QTR_SENSOR_COUNT; i++)
-    {
-        if (qtrSensorStatus[i])
-        {
-            seesBlackLine = true;
-            break;
-        }
-    }
-
-    if (!seesBlackLine)
-    {
-        lostLineRecoveryActive = true;
-        if (turnRightOnLostLine)
-        {
-            motorL.setSpeed(600);
-            motorR.setSpeed(-600);
-        }
-        else
-        {
-            motorL.setSpeed(-600);
-            motorR.setSpeed(600);
-        }
-        oldLineStatus = lineStatus;
-        return;
-    }
-
-    if (lostLineRecoveryActive)
-    {
-        lostLineRecoveryActive = false;
-        turnRightOnLostLine = !turnRightOnLostLine;
     }
 
     controlSignal = calculatePIDstep(pid, position, driveLoopHzTarget);
     setMotorSpeeds(controlSignal, motorL, motorR);
+
+    if (motor3Running && (millis() - motor3StartMs >= 3000))
+    {
+        shield.motor(3).stop();
+        motor3Running = false;
+    }
 
     if (lineStatus != oldLineStatus)
     {
@@ -182,20 +156,29 @@ void drivingLoop(PIDController &pid, QTRSensors &qtr, Motor &motorL, Motor &moto
         {
             // TODO for students: Implement your own cases needed to complete the required tasks your roboter has to complete during the run
         case STOP:
+        {
             checkpointCounter++;
-            horizontalLineCounter++;
-            lastCheckpointTimeMs = millis();
-
-            if (horizontalLineCounter == 11 || horizontalLineCounter == 13 || horizontalLineCounter == 14)
+            const uint32_t checkpointAtMs = millis();
+            lastCheckpointTimeMs = static_cast<int32_t>(checkpointAtMs);
+            const int runCheckpointNumber = checkpointCounter - runStartCheckpointCounter;
+            if (runCheckpointNumber > 0 && runCheckpointNumber <= 13)
             {
-                stopAtCheckpoints = true;
+                runCheckpointElapsedMs[runCheckpointNumber - 1] = checkpointAtMs - runStartTimeMs;
             }
 
-            if (horizontalLineCounter >= 14)
+            if (checkpointCounter == 10 && !servoTriggeredAtTen)
             {
-                robotMotionEnabled = false;
-                motorL.brake();
-                motorR.brake();
+                shield.servo(3).setAngleRange(180.0f);
+                shield.servo(3).setAngle(90.0f);
+                servoTriggeredAtTen = true;
+            }
+
+            if (checkpointCounter == 12 && !motor3TriggeredAtTwelve)
+            {
+                shield.motor(3).setSpeed(defaultMotorSpeed);
+                motor3StartMs = millis();
+                motor3Running = true;
+                motor3TriggeredAtTwelve = true;
             }
 
             if (stopAtCheckpoints)
@@ -204,7 +187,20 @@ void drivingLoop(PIDController &pid, QTRSensors &qtr, Motor &motorL, Motor &moto
                 motorR.brake();
                 delay(1000);
             }
+            if (checkpointCounter == 7)
+            {
+                motorL.setSpeed(-defaultMotorSpeed);
+                motorR.setSpeed(defaultMotorSpeed);
+                delay(1800);
+            } 
+            if (checkpointCounter == 13)
+            {
+                robotMotionEnabled = false;
+                motorL.brake();
+                motorR.brake();
+            } 
             break;
+        }
         default:
             break;
         }

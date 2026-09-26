@@ -1,6 +1,7 @@
 
 #pragma once
 #include "src/motorshield/motor.h"
+#include "src/motorshield/motorshield.h"
 #include <QTRSensors.h>
 
 enum LineStatus
@@ -27,4 +28,4 @@ public:
 float calculatePIDstep(PIDController &pid, float measurement, float executionFrequency);
 void updateLineStatus();
 void setMotorSpeeds(int signal, Motor &motorL, Motor &motorR);
-void drivingLoop(PIDController &pid, QTRSensors &qtr, Motor &motorL, Motor &motorR);
+void drivingLoop(PIDController &pid, QTRSensors &qtr, Motor &motorL, Motor &motorR, Motorshield &shield);

@@ -2,8 +2,1062 @@
 #define WEB_PAGE_H
 
 const char htmlPage[] PROGMEM = R"rawliteral(
-<!doctype html><html lang=en><meta charset=utf-8><meta content="width=device-width,initial-scale=1" name=viewport><title>IP Chassis Telemetry</title><style>html,body{height:100%;margin:0}body{color:#222;background:#f4f5f7;flex-direction:column;font-family:Arial,Helvetica,sans-serif;display:flex}.app{box-sizing:border-box;flex-direction:column;gap:10px;height:100%;padding:10px;display:flex}header{text-align:center;padding:6px 12px}header h1{color:#333;margin:0;font-size:26px}.subtitle{color:#666;margin-top:4px;font-size:13px}.main{flex:auto;gap:10px;min-height:0;display:flex}.col{box-sizing:border-box;background:#f8f8f8;border:1px solid #e8e8e8;border-radius:8px;flex-direction:column;gap:8px;min-width:0;min-height:0;padding:8px;display:flex}.left{width:320px;overflow:hidden auto}.center{flex:auto}.right{width:320px;overflow:hidden auto}.box{box-sizing:border-box;background:#fff;border:1px solid #e9e9e9;border-radius:6px;padding:8px}.status{text-align:center;border:1px solid #0000;border-radius:6px;padding:6px;font-weight:700}.status.connected{color:#155724;background:#d4edda;border-color:#c3e6cb}.status.disconnected{color:#721c24;background:#f8d7da;border-color:#f5c6cb}.controls-grid{flex-direction:column;gap:8px;display:flex}.row{gap:8px;display:flex}button{cursor:pointer;color:#fff;background:#007bff;border:none;border-radius:6px;padding:8px 10px;font-size:14px;font-weight:700}.btn-light{background:#6c757d}.btn-success{background:#28a745}.btn-danger{background:#dc3545}.params{flex-direction:column;gap:6px;display:flex}.params .row button{flex:1 1 0;min-width:0;padding-left:4px;padding-right:4px}label{color:#333;font-size:13px}input[type=number]{box-sizing:border-box;border:1px solid #ddd;border-radius:4px;width:100%;padding:6px;font-size:14px}input[type=checkbox]{vertical-align:middle;margin-right:6px;transform:scale(1.05)}details summary{cursor:pointer;color:#333;font-size:13px;font-weight:700}.small{color:#666;font-size:12px}.hint{text-underline-offset:3px;cursor:help;text-decoration:underline 1px dashed #999}.plot-wrap{flex-direction:column;gap:6px;height:100%;min-height:0;display:flex}.plot-header{flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;font-size:13px;display:flex}.plot-container{background:#fff;border:1px solid #ececec;border-radius:6px;flex:auto;min-height:300px;position:relative;overflow:hidden}#chartCanvas{width:100%;height:100%;display:block}.legend{flex-wrap:wrap;gap:10px;font-size:13px;display:flex}.dot{vertical-align:baseline;border-radius:2px;width:9px;height:9px;margin-right:4px;display:inline-block}.telemetry-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;display:grid;overflow-y:auto}.telemetry-item{overflow-wrap:anywhere;background:#fff;border:1px solid #ededed;border-radius:6px;min-width:0;padding:6px;font-size:12px}.telemetry-item .value{margin-top:4px;font-size:15px;font-weight:700}.console-wrap{position:relative}.console{color:#f0f0f0;white-space:pre-wrap;background:#111;border-radius:6px;height:130px;padding:8px;font-family:monospace;font-size:12px;overflow-y:auto}#clearConsoleBtn{z-index:2;padding:4px 8px;font-size:11px;position:absolute;top:4px;right:4px}@media (width<=1200px){.left{width:280px}.right{width:290px}}@media (width<=980px){html,body{height:auto;min-height:100%}.app{height:auto;min-height:100vh}.main{flex-direction:column}.left,.right,.center{width:100%;overflow:visible}.plot-container{min-height:280px}.telemetry-grid{overflow:visible}}@media (height<=850px) and (width>=981px){html,body{height:auto;min-height:100%}.app{height:auto;min-height:100vh}.main{flex:none;min-height:600px}.left,.right{overflow:visible}}@media (width<=600px){.app{gap:6px;padding:6px}header{padding:4px}header h1{font-size:22px}.col{gap:6px;padding:6px}.plot-container{min-height:240px}.console{height:110px}}</style><body><div class=app><header><h1>IP Chassis Telemetry</h1><div class=subtitle>Live telemetry and PID tuning over WiFi</div></header><div class=main><div class="col left"><div class="box controls-grid"><div class="status disconnected" id=statusText>Status: Disconnected</div><button id=connBtn onclick=toggleConnection()>Connect</button><div class=row><button onclick="sendRobotCommand('start')" class=btn-success style=flex:1>Start Moving</button><button onclick="sendRobotCommand('stop')" class=btn-danger style=flex:1>Stop Moving</button></div><div class=small id=apInfo>Connect to the ESP32 AP, then click Connect.</div></div><div class=box><div style=margin-bottom:6px;font-weight:700>PID and Settings</div><div class=params><label for=pVal>P</label><input id=pVal step=0.0001 type=number><label for=iVal>I</label><input id=iVal step=0.0001 type=number><label for=dVal>D</label><input id=dVal step=0.0001 type=number><label for=motorSpeed>Normal motor speed (0-4095)</label><input id=motorSpeed max=4095 min=0 step=1 type=number><details><summary>advanced</summary> <div style=flex-direction:column;gap:6px;margin-top:8px;display:flex><label for=driveLoopHzInput>Drive loop Hz</label><input id=driveLoopHzInput max=500 min=1 step=1 type=number><label for=telemetryLoopHzInput>Telemetry update Hz</label><input id=telemetryLoopHzInput max=200 min=1 step=1 type=number><label><input id=enableDeadzone type=checkbox>Enable deadzone compensation</label><label for=minPWMtoMove>Min PWM to move</label><input id=minPWMtoMove max=4095 min=0 step=1 type=number><label><input id=stopAtCheckpoints type=checkbox>Stop at checkpoints</label><label><input id=brakeWhenStopped type=checkbox>Brake when stopped</label><label><input id=enableSupplyAndM1M2CurrentMonitoring type=checkbox><span title="Each sampling pass blocks on I2C for several milliseconds (two 15-sample averaged ADC current readings plus both rail voltages). So it adds latency to the drive loop and may degrade driving performance. Update rate is independent of the telemetry rate and fixed at 10 Hz." class=hint>Enable supply rails and M1/M2 current monitoring</span></label></div></details><div class=row style=margin-top:8px><button id=sendParamsBtn onclick=sendParams()>Send Params</button><button class=btn-light onclick=restoreDefaults()>Defaults</button></div></div></div></div><div class="col center"><div class="box plot-wrap"><div style=font-weight:700>Live plot - Sensor error and Motor speeds (L / R)</div><div class=plot-header><div class=small id=lastUpdate>No telemetry yet</div><div><label for=plotWindowSec style=margin-right:4px>Plot window (s)</label><input id=plotWindowSec max=300 min=5 step=1 style=width:76px type=number value=60><button class=btn-light id=savePngBtn onclick=saveCanvasPNG()>Save PNG</button></div></div><div class=plot-container><canvas id=chartCanvas></canvas></div><div class=legend><span><span class=dot style=background:#d32f2f></span>Sensor Error (left axis)</span><span><span class=dot style=background:#1976d2></span>Left Speed (right axis)</span><span><span class=dot style=background:#388e3c></span>Right Speed (right axis)</span><span><span class=dot style=background:#ff6d00></span>Checkpoint</span><span class=small id=actualRateHz></span></div></div></div><div class="col right"><div class=box style=font-weight:700>Telemetry (live)</div><div class=telemetry-grid id=telemetryGrid><div class=telemetry-item><div>QTR 0</div><div class=value id=qtr0>-</div></div><div class=telemetry-item><div>QTR 1</div><div class=value id=qtr1>-</div></div><div class=telemetry-item><div>QTR 2</div><div class=value id=qtr2>-</div></div><div class=telemetry-item><div>QTR 3</div><div class=value id=qtr3>-</div></div><div class=telemetry-item><div>QTR 4</div><div class=value id=qtr4>-</div></div><div class=telemetry-item><div>Sensor Error</div><div class=value id=sensorError>-</div></div><div class=telemetry-item><div>Left Speed</div><div class=value id=leftSpeed>-</div></div><div class=telemetry-item><div>Right Speed</div><div class=value id=rightSpeed>-</div></div><div class=telemetry-item><div>Battery V</div><div class=value id=batteryVoltageOut>-</div></div><div class=telemetry-item><div>P</div><div class=value id=pOut>-</div></div><div class=telemetry-item><div>I</div><div class=value id=iOut>-</div></div><div class=telemetry-item><div>D</div><div class=value id=dOut>-</div></div><div class=telemetry-item><div>Normal motor speed</div><div class=value id=motorSpeedOut>-</div></div><div class=telemetry-item><div>Checkpoints</div><div class=value id=checkpointCounterOut>-</div></div><div class=telemetry-item><div>Last checkpoint ms</div><div class=value id=checkpointTimeMsOut>-</div></div></div><details style=margin-top:8px><summary>advanced telemetry</summary> <div class=telemetry-grid style=margin-top:8px><div class=telemetry-item><div>Servo rail V</div><div class=value id=servoRailVoltageOut>-</div></div><div class=telemetry-item><div>M1 current A</div><div class=value id=m1CurrentOut>-</div></div><div class=telemetry-item><div>M2 current A</div><div class=value id=m2CurrentOut>-</div></div><div class=telemetry-item><div>Drive loop Hz (target)</div><div class=value id=driveLoopHzTargetOut>-</div></div><div class=telemetry-item><div>Telemetry Hz (target)</div><div class=value id=telemetryHzTargetOut>-</div></div><div class=telemetry-item><div>Drive loop Hz (measured)</div><div class=value id=driveLoopHzMeasuredOut>-</div></div><div class=telemetry-item><div>Drive loop exec us</div><div class=value id=driveLoopExecMeasuredOut>-</div></div><div class=telemetry-item><div>Telemetry Hz (measured)</div><div class=value id=telemetryHzMeasuredOut>-</div></div><div class=telemetry-item><div><span title="Longest single pass of the telemetry task in the last second, covering HTTP/WebSocket servicing, supply/current sampling and the telemetry broadcast." class=hint>Telemetry exec us (peak)</span></div><div class=value id=telemetryExecUsPeakOut>-</div></div><div class=telemetry-item><div>Timestamp ms</div><div class=value id=timestampMs>-</div></div></div></details></div></div><div class=console-wrap><button class=btn-light id=clearConsoleBtn>Clear Console</button><div aria-live=polite class=console id=messages>Ready. Click Connect to start.</div></div></div><script>const WS_PORT=81,MAX_SAMPLES=15e3,MAX_CHECKPOINTS=1e3,TRIM_SAMPLES=1e3,RATE_WINDOW_MS=5e3;let ws=null,plotWindowSec=60,errBuf=[],leftBuf=[],rightBuf=[],timeBuf=[],checkpoints=[],lastCheckpointCounter=0,telePktTimes=[];const $=id=>document.getElementById(id);function addMsg(text){let messagesEl=$(`messages`);messagesEl&&(messagesEl.textContent=`${(/* @__PURE__ */ new Date()).toLocaleTimeString(`de-DE`)} - ${text}\n${messagesEl.textContent}`.slice(0,9e3))}function currentWsUrl(){return`${location.protocol===`https:`?`wss://`:`ws://`}${location.hostname}:81`}function isOpen(){return ws&&ws.readyState===WebSocket.OPEN}function updateStatus(text,connected){let statusEl=$(`statusText`);statusEl.textContent=`Status: ${text}`,statusEl.className=`status ${connected?`connected`:`disconnected`}`,$(`connBtn`).textContent=connected?`Disconnect`:`Connect`,$(`sendParamsBtn`).disabled=!connected}function resetTelemetryData(){errBuf=[],leftBuf=[],rightBuf=[],timeBuf=[],checkpoints=[],telePktTimes=[],lastCheckpointCounter=0,$(`lastUpdate`).textContent=`No telemetry yet`,$(`actualRateHz`).textContent=``}function connect(){if(ws)return;let url=currentWsUrl();addMsg(`Connecting to ${url}`);let socket=new WebSocket(url);ws=socket,socket.binaryType=`arraybuffer`,socket.onopen=()=>{resetTelemetryData(),addMsg(`Connected`),updateStatus(`Connected`,!0),requestCurrentParams()},socket.onclose=()=>{ws===socket&&(addMsg(`Disconnected`),updateStatus(`Disconnected`,!1),ws=null)},socket.onerror=()=>addMsg(`WebSocket error`),socket.onmessage=ev=>{if(ev.data instanceof ArrayBuffer){handleTelemetryBin(ev.data);return}if(ev.data instanceof Blob){ev.data.arrayBuffer().then(handleTelemetryBin);return}handleTextMessage(String(ev.data||``).trim())},updateStatus(`Connecting...`,!1)}function disconnect(){if(ws)try{ws.close()}catch{}}function toggleConnection(){if(ws){disconnect();return}connect()}function requestCurrentParams(){if(!isOpen()){addMsg(`Not connected.`);return}ws.send(`command=get_params`)}function sendRobotCommand(command){if(!isOpen()){addMsg(`Not connected.`);return}ws.send(`command=${command}`),addMsg(`Sent command=${command}`)}function restoreDefaults(){$(`pVal`).value=.32,$(`iVal`).value=.4,$(`dVal`).value=0,$(`motorSpeed`).value=960,$(`driveLoopHzInput`).value=40,$(`telemetryLoopHzInput`).value=20,$(`enableDeadzone`).checked=!1,$(`minPWMtoMove`).value=560,$(`stopAtCheckpoints`).checked=!1,$(`brakeWhenStopped`).checked=!1,$(`enableSupplyAndM1M2CurrentMonitoring`).checked=!1,addMsg(`Restored defaults locally.`)}function sendParams(){if(!isOpen()){addMsg(`Not connected.`);return}let csv=[Number($(`pVal`).value)||0,Number($(`iVal`).value)||0,Number($(`dVal`).value)||0,Number($(`motorSpeed`).value)||0,Number($(`driveLoopHzInput`).value)||1,Number($(`telemetryLoopHzInput`).value)||1,$(`enableDeadzone`).checked?1:0,Number($(`minPWMtoMove`).value)||0,$(`stopAtCheckpoints`).checked?1:0,$(`brakeWhenStopped`).checked?1:0,$(`enableSupplyAndM1M2CurrentMonitoring`).checked?1:0].join(`,`);ws.send(`params=${csv}`),addMsg(`Sent params=${csv}`)}function handleTextMessage(msg){if(!msg)return;if(msg.startsWith(`status=`)){addMsg(`Robot status: ${msg.slice(7)}`);return}if(!msg.startsWith(`params=`)){addMsg(msg);return}let parts=msg.slice(7).split(`,`);if(parts.length!==11){addMsg(`Unexpected params message (${parts.length} fields): ${msg}`);return}$(`pVal`).value=parts[0],$(`iVal`).value=parts[1],$(`dVal`).value=parts[2],$(`motorSpeed`).value=parts[3],$(`driveLoopHzInput`).value=parts[4],$(`telemetryLoopHzInput`).value=parts[5],$(`enableDeadzone`).checked=parts[6]===`1`,$(`minPWMtoMove`).value=parts[7],$(`stopAtCheckpoints`).checked=parts[8]===`1`,$(`brakeWhenStopped`).checked=parts[9]===`1`,$(`enableSupplyAndM1M2CurrentMonitoring`).checked=parts[10]===`1`,addMsg(`Parameters synced from robot.`)}function readU16(view,offset){return view.getUint16(offset,!0)}function readU32(view,offset){return view.getUint32(offset,!0)}function readI32(view,offset){return view.getInt32(offset,!0)}function readF32(view,offset){return view.getFloat32(offset,!0)}function parseTelemetryBIN(buffer){let view=new DataView(buffer),off=0,magic=readU32(view,off);off+=4;let version=readU16(view,off);off+=2;let totalLen=readU16(view,off);if(off+=2,magic!==827149396||version!==3||totalLen!==buffer.byteLength)return null;let qtrs=[readU16(view,off+0),readU16(view,off+2),readU16(view,off+4),readU16(view,off+6),readU16(view,off+8)];off+=10;let sensorError=readI32(view,off);off+=4;let leftSpeed=readI32(view,off);off+=4;let rightSpeed=readI32(view,off);off+=4;let batteryVoltageV=readF32(view,off);off+=4;let servoRailVoltageV=readF32(view,off);off+=4;let motorCurrentsA=[];for(let m=0;m<2;m++)motorCurrentsA.push(readF32(view,off)),off+=4;let P=readF32(view,off);off+=4;let I=readF32(view,off);off+=4;let D=readF32(view,off);off+=4;let motorSpeed=readI32(view,off);off+=4;let checkpointCounter=readI32(view,off);off+=4;let checkpointTimeMs=readI32(view,off);off+=4;let driveLoopHzTarget=readI32(view,off);off+=4;let telemetryHzTarget=readI32(view,off);off+=4;let driveLoopHzMeasured=readF32(view,off);off+=4;let driveLoopExecUsMeasured=readF32(view,off);off+=4;let telemetryHzMeasured=readF32(view,off);off+=4;let telemetryExecUsPeak=readF32(view,off);off+=4;let timestamp=readU32(view,off);return off+=4,{timestamp,qtrs,sensorError,leftSpeed,rightSpeed,batteryVoltageV,servoRailVoltageV,motorCurrentsA,P,I,D,motorSpeed,driveLoopHzTarget,telemetryHzTarget,checkpointCounter,checkpointTimeMs,driveLoopHzMeasured,driveLoopExecUsMeasured,telemetryHzMeasured,telemetryExecUsPeak}}function pushBuf(buf,value){buf.push(value),buf.length>15e3&&buf.splice(0,1e3)}function pushTelemetryRow(obj){pushBuf(errBuf,Number(obj.sensorError)||0),pushBuf(leftBuf,Number(obj.leftSpeed)||0),pushBuf(rightBuf,Number(obj.rightSpeed)||0),pushBuf(timeBuf,Number(obj.timestamp)||0)}function updateReceiveRate(){let now=Date.now();for(telePktTimes.push(now);telePktTimes.length&&now-telePktTimes[0]>RATE_WINDOW_MS;)telePktTimes.shift();let hz=telePktTimes.length/Math.max(.25,Math.min(RATE_WINDOW_MS,now-(telePktTimes[0]||now))/1e3);$(`actualRateHz`).textContent=`(${hz.toFixed(1)} Hz)`}function handleTelemetryBin(buffer){let t=parseTelemetryBIN(buffer);if(!t)return;$(`timestampMs`).textContent=String(t.timestamp),$(`qtr0`).textContent=String(t.qtrs[0]),$(`qtr1`).textContent=String(t.qtrs[1]),$(`qtr2`).textContent=String(t.qtrs[2]),$(`qtr3`).textContent=String(t.qtrs[3]),$(`qtr4`).textContent=String(t.qtrs[4]),$(`sensorError`).textContent=String(t.sensorError),$(`leftSpeed`).textContent=String(t.leftSpeed),$(`rightSpeed`).textContent=String(t.rightSpeed);let fmtOrDash=(value,digits)=>Number.isFinite(value)?value.toFixed(digits):`-`;$(`batteryVoltageOut`).textContent=fmtOrDash(t.batteryVoltageV,2),$(`servoRailVoltageOut`).textContent=fmtOrDash(t.servoRailVoltageV,2);for(let m=0;m<2;m++)$(`m${m+1}CurrentOut`).textContent=fmtOrDash(t.motorCurrentsA[m],3);$(`pOut`).textContent=Number(t.P).toFixed(5),$(`iOut`).textContent=Number(t.I).toFixed(5),$(`dOut`).textContent=Number(t.D).toFixed(5),$(`motorSpeedOut`).textContent=String(t.motorSpeed),$(`driveLoopHzTargetOut`).textContent=String(t.driveLoopHzTarget),$(`telemetryHzTargetOut`).textContent=String(t.telemetryHzTarget),$(`checkpointCounterOut`).textContent=String(t.checkpointCounter),$(`checkpointTimeMsOut`).textContent=String(t.checkpointTimeMs),$(`driveLoopHzMeasuredOut`).textContent=Number(t.driveLoopHzMeasured).toFixed(2),$(`driveLoopExecMeasuredOut`).textContent=Number(t.driveLoopExecUsMeasured).toFixed(1),$(`telemetryHzMeasuredOut`).textContent=Number(t.telemetryHzMeasured).toFixed(2),$(`telemetryExecUsPeakOut`).textContent=Number(t.telemetryExecUsPeak).toFixed(1),pushTelemetryRow(t),t.checkpointCounter>lastCheckpointCounter&&(checkpoints.push({t:t.timestamp,n:t.checkpointCounter}),checkpoints.length>1e3&&checkpoints.shift(),lastCheckpointCounter=t.checkpointCounter),$(`lastUpdate`).textContent=(/* @__PURE__ */ new Date()).toLocaleTimeString(`de-DE`),updateReceiveRate()}(function setupCanvasPlot(){let canvas=$(`chartCanvas`),COLORS={axis:`#888`,grid:`#ececec`,text:`#666`,error:`#d32f2f`,left:`#1976d2`,right:`#388e3c`,checkpoint:`#ff6d00`},Y_ERR_MIN=-2e3,Y_ERR_MAX=2e3,Y_SPD_MIN=-4095,Y_SPD_MAX=4095,PAD={left:58,right:50,top:12,bottom:44},dpr=1;function syncPixels(){dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));let w=Math.round(canvas.clientWidth*dpr),h=Math.round(canvas.clientHeight*dpr);canvas.width!==w&&(canvas.width=w),canvas.height!==h&&(canvas.height=h)}function xToPx(x,xMin,xMax){let w=canvas.width/dpr-PAD.left-PAD.right;return xMax<=xMin?PAD.left:PAD.left+(x-xMin)/(xMax-xMin)*w}function yErrToPx(y){let h=canvas.height/dpr-PAD.top-PAD.bottom;return PAD.top+(1-(y-Y_ERR_MIN)/(2e3-Y_ERR_MIN))*h}function ySpdToPx(y){let h=canvas.height/dpr-PAD.top-PAD.bottom;return PAD.top+(1-(y-Y_SPD_MIN)/(Y_SPD_MAX-Y_SPD_MIN))*h}function drawGrid(ctx,xMin,xMax){let cw=canvas.width/dpr,ch=canvas.height/dpr;ctx.lineWidth=1,ctx.strokeStyle=COLORS.grid,ctx.fillStyle=COLORS.text,ctx.font=`12px Arial`,ctx.textBaseline=`middle`;for(let y=-2e3;y<=2e3;y+=1e3){let py=yErrToPx(y);ctx.beginPath(),ctx.moveTo(PAD.left,py),ctx.lineTo(cw-PAD.right,py),ctx.stroke(),ctx.textAlign=`right`,ctx.fillText(String(y),PAD.left-6,py)}ctx.textAlign=`left`;for(let y of[Y_SPD_MIN,0,Y_SPD_MAX]){let py=ySpdToPx(y);ctx.fillText(String(y),cw-PAD.right+4,py)}for(let relativeSec=-plotWindowSec;relativeSec<=0;relativeSec+=5){let x=xToPx(xMax+relativeSec*1e3,xMin,xMax);ctx.beginPath(),ctx.moveTo(x,PAD.top),ctx.lineTo(x,ch-PAD.bottom),ctx.stroke(),ctx.textAlign=`center`,ctx.textBaseline=`top`,ctx.fillText(`${relativeSec.toFixed(0)}s`,x,ch-PAD.bottom+6),ctx.textBaseline=`middle`}ctx.strokeStyle=COLORS.axis,ctx.beginPath(),ctx.moveTo(PAD.left,PAD.top),ctx.lineTo(PAD.left,ch-PAD.bottom),ctx.lineTo(cw-PAD.right,ch-PAD.bottom),ctx.stroke()}function drawSeries(ctx,xs,ys,xMin,xMax,color,yToPx){if(xs.length<2||ys.length<2)return;let startIdx=Math.max(0,xs.length-ys.length);ctx.strokeStyle=color,ctx.lineWidth=2,ctx.beginPath();let moved=!1;for(let i=0;i<ys.length;i++){let ti=startIdx+i;if(ti>=xs.length)break;let x=xToPx(xs[ti],xMin,xMax),y=yToPx(ys[i]);moved?ctx.lineTo(x,y):(ctx.moveTo(x,y),moved=!0)}moved&&ctx.stroke()}function drawCheckpoints(ctx,xMin,xMax){let ch=canvas.height/dpr;ctx.strokeStyle=COLORS.checkpoint,ctx.fillStyle=COLORS.checkpoint,ctx.lineWidth=1,ctx.font=`11px Arial`;for(let cp of checkpoints){if(cp.t<xMin||cp.t>xMax)continue;let x=xToPx(cp.t,xMin,xMax);ctx.beginPath(),ctx.moveTo(x,PAD.top),ctx.lineTo(x,ch-PAD.bottom),ctx.stroke(),ctx.fillText(String(cp.n),x+3,ch-PAD.bottom-10)}}function draw(){syncPixels();let ctx=canvas.getContext(`2d`);if(!ctx)return;let cw=canvas.width/dpr,ch=canvas.height/dpr;ctx.setTransform(dpr,0,0,dpr,0,0),ctx.clearRect(0,0,cw,ch),ctx.fillStyle=`#fff`,ctx.fillRect(0,0,cw,ch);let xMax=timeBuf.length?timeBuf[timeBuf.length-1]:0,xMin=xMax-plotWindowSec*1e3;drawGrid(ctx,xMin,xMax),drawSeries(ctx,timeBuf,errBuf,xMin,xMax,COLORS.error,yErrToPx),drawSeries(ctx,timeBuf,leftBuf,xMin,xMax,COLORS.left,ySpdToPx),drawSeries(ctx,timeBuf,rightBuf,xMin,xMax,COLORS.right,ySpdToPx),drawCheckpoints(ctx,xMin,xMax)}function tick(){draw(),requestAnimationFrame(tick)}requestAnimationFrame(tick)})();function saveCanvasPNG(){let canvas=$(`chartCanvas`);if(!canvas)return;let temp=document.createElement(`canvas`);temp.width=canvas.width,temp.height=canvas.height;let ctx=temp.getContext(`2d`);if(!ctx)return;ctx.fillStyle=`#fff`,ctx.fillRect(0,0,temp.width,temp.height),ctx.drawImage(canvas,0,0);let now=/* @__PURE__ */ new Date,filename=`telemetry_${`${now.getFullYear()}${String(now.getMonth()+1).padStart(2,`0`)}${String(now.getDate()).padStart(2,`0`)}-${String(now.getHours()).padStart(2,`0`)}${String(now.getMinutes()).padStart(2,`0`)}${String(now.getSeconds()).padStart(2,`0`)}`}.png`;temp.toBlob&&temp.toBlob(blob=>{if(!blob)return;let a=document.createElement(`a`);a.href=URL.createObjectURL(blob),a.download=filename,a.click(),URL.revokeObjectURL(a.href)},`image/png`)}window.addEventListener(`DOMContentLoaded`,()=>{restoreDefaults(),updateStatus(`Disconnected`,!1),$(`apInfo`).textContent=`Open this page from AP host ${location.hostname} and click Connect.`,$(`clearConsoleBtn`).addEventListener(`click`,()=>{$(`messages`).textContent=``});let plotWindowInput=$(`plotWindowSec`);plotWindowInput.addEventListener(`change`,()=>{let value=Number(plotWindowInput.value)||60;plotWindowSec=Math.max(5,Math.min(300,value)),plotWindowInput.value=String(plotWindowSec)}),addMsg(`Ready. Click Connect to start.`)});</script>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IP Chassis Telemetry</title>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f4f5f7;
+      color: #222;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: 10px;
+      box-sizing: border-box;
+      gap: 10px;
+    }
+
+    header {
+      text-align: center;
+      padding: 6px 12px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 26px;
+      color: #333;
+    }
+
+    .subtitle {
+      margin-top: 4px;
+      font-size: 13px;
+      color: #666;
+    }
+
+    .main {
+      display: flex;
+      gap: 10px;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+
+    .col {
+      background: #f8f8f8;
+      border: 1px solid #e8e8e8;
+      border-radius: 8px;
+      padding: 8px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 0;
+      min-width: 0;
+    }
+
+    .left { width: 320px; overflow-x: hidden; overflow-y: auto; }
+    .center { flex: 1 1 auto; }
+    .right { width: 320px; overflow-x: hidden; overflow-y: auto; }
+
+    .box {
+      background: #fff;
+      border: 1px solid #e9e9e9;
+      border-radius: 6px;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+
+    .status {
+      text-align: center;
+      font-weight: 700;
+      padding: 6px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+    }
+
+    .status.connected {
+      background: #d4edda;
+      color: #155724;
+      border-color: #c3e6cb;
+    }
+
+    .status.disconnected {
+      background: #f8d7da;
+      color: #721c24;
+      border-color: #f5c6cb;
+    }
+
+    .controls-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .row { display: flex; gap: 8px; }
+
+    button {
+      border: none;
+      border-radius: 6px;
+      padding: 8px 10px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      background: #007bff;
+    }
+
+    .btn-light { background: #6c757d; }
+    .btn-success { background: #28a745; }
+    .btn-danger { background: #dc3545; }
+
+    .params {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .params .row button { flex: 1 1 0; min-width: 0; padding-left: 4px; padding-right: 4px; }
+
+    label {
+      font-size: 13px;
+      color: #333;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 6px;
+      font-size: 14px;
+    }
+
+    input[type="checkbox"] {
+      transform: scale(1.05);
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    details summary {
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 13px;
+      color: #333;
+    }
+
+    .small {
+      font-size: 12px;
+      color: #666;
+    }
+
+    /* Marks label text that carries an explanatory title= tooltip. */
+    .hint {
+      text-decoration: underline dashed #999 1px;
+      text-underline-offset: 3px;
+      cursor: help;
+    }
+
+    .plot-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .plot-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      font-size: 13px;
+    }
+
+    .plot-container {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 300px;
+      background: #fff;
+      border: 1px solid #ececec;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    #chartCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .legend {
+      font-size: 13px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 2px;
+      margin-right: 4px;
+      vertical-align: baseline;
+    }
+
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      overflow-y: auto;
+    }
+
+    .telemetry-item {
+      background: #fff;
+      border: 1px solid #ededed;
+      border-radius: 6px;
+      padding: 6px;
+      font-size: 12px;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .telemetry-item .value {
+      margin-top: 4px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .checkpoint-report-list {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(9ch, auto);
+      gap: 4px 8px;
+      margin-top: 8px;
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    .checkpoint-report-list[hidden] { display: none; }
+
+    .console-wrap {
+      position: relative;
+    }
+
+    .console {
+      background: #111;
+      color: #f0f0f0;
+      border-radius: 6px;
+      padding: 8px;
+      height: 130px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 12px;
+    }
+
+    #clearConsoleBtn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      padding: 4px 8px;
+      font-size: 11px;
+      z-index: 2;
+    }
+
+    @media (max-width: 1200px) {
+      .left { width: 280px; }
+      .right { width: 290px; }
+    }
+
+    @media (max-width: 980px) {
+      html, body { height: auto; min-height: 100%; }
+      .app { height: auto; min-height: 100vh; }
+      .main { flex-direction: column; }
+      .left, .right, .center { width: 100%; overflow: visible; }
+      .plot-container { min-height: 280px; }
+      .telemetry-grid { overflow: visible; }
+    }
+
+    @media (max-height: 850px) and (min-width: 981px) {
+      html, body { height: auto; min-height: 100%; }
+      .app { height: auto; min-height: 100vh; }
+      .main { flex: none; min-height: 600px; }
+      .left, .right { overflow: visible; }
+    }
+
+    @media (max-width: 600px) {
+      .app { padding: 6px; gap: 6px; }
+      header { padding: 4px; }
+      header h1 { font-size: 22px; }
+      .col { padding: 6px; gap: 6px; }
+      .plot-container { min-height: 240px; }
+      .console { height: 110px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>IP Chassis Telemetry</h1>
+      <div class="subtitle">Live telemetry and PID tuning over WiFi</div>
+    </header>
+
+    <div class="main">
+      <div class="col left">
+        <div class="box controls-grid">
+          <div id="statusText" class="status disconnected">Status: Disconnected</div>
+          <button id="connBtn" onclick="toggleConnection()">Connect</button>
+          <div class="row">
+            <button class="btn-success" style="flex:1;" onclick="sendRobotCommand('start')">Start Moving</button>
+            <button class="btn-danger" style="flex:1;" onclick="sendRobotCommand('stop')">Stop Moving</button>
+          </div>
+          <div class="small" id="apInfo">Connect to the ESP32 AP, then click Connect.</div>
+        </div>
+
+        <div class="box">
+          <div style="font-weight:700; margin-bottom:6px;">PID and Settings</div>
+          <div class="params">
+            <label for="pVal">P</label>
+            <input id="pVal" type="number" step="0.0001">
+
+            <label for="iVal">I</label>
+            <input id="iVal" type="number" step="0.0001">
+
+            <label for="dVal">D</label>
+            <input id="dVal" type="number" step="0.0001">
+
+            <label for="motorSpeed">Normal motor speed (0-4095)</label>
+            <input id="motorSpeed" type="number" min="0" max="4095" step="1">
+
+            <details>
+              <summary>advanced</summary>
+              <div style="margin-top:8px; display:flex; flex-direction:column; gap:6px;">
+                <label for="driveLoopHzInput">Drive loop Hz</label>
+                <input id="driveLoopHzInput" type="number" min="1" max="500" step="1">
+
+                <label for="telemetryLoopHzInput">Telemetry update Hz</label>
+                <input id="telemetryLoopHzInput" type="number" min="1" max="200" step="1">
+
+                <label><input id="enableDeadzone" type="checkbox">Enable deadzone compensation</label>
+
+                <label for="minPWMtoMove">Min PWM to move</label>
+                <input id="minPWMtoMove" type="number" min="0" max="4095" step="1">
+
+                <label><input id="stopAtCheckpoints" type="checkbox">Stop at checkpoints</label>
+                <label><input id="brakeWhenStopped" type="checkbox">Brake when stopped</label>
+                <label><input id="enableSupplyAndM1M2CurrentMonitoring" type="checkbox"><span class="hint" title="Each sampling pass blocks on I2C for several milliseconds (two 15-sample averaged ADC current readings plus both rail voltages). So it adds latency to the drive loop and may degrade driving performance. Update rate is independent of the telemetry rate and fixed at 10 Hz.">Enable supply rails and M1/M2 current monitoring</span></label>
+              </div>
+            </details>
+
+            <div class="row" style="margin-top:8px;">
+              <button id="sendParamsBtn" onclick="sendParams()">Send Params</button>
+              <button class="btn-light" onclick="restoreDefaults()">Defaults</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col center">
+        <div class="box plot-wrap">
+          <div style="font-weight:700;">Live plot - Sensor error and Motor speeds (L / R)</div>
+          <div class="plot-header">
+            <div class="small" id="lastUpdate">No telemetry yet</div>
+            <div>
+              <label for="plotWindowSec" style="margin-right:4px;">Plot window (s)</label>
+              <input id="plotWindowSec" type="number" min="5" max="300" step="1" value="60" style="width:76px;">
+              <button class="btn-light" id="savePngBtn" onclick="saveCanvasPNG()">Save PNG</button>
+            </div>
+          </div>
+
+          <div class="plot-container">
+            <canvas id="chartCanvas"></canvas>
+          </div>
+
+          <div class="legend">
+            <span><span class="dot" style="background:#d32f2f;"></span>Sensor Error (left axis)</span>
+            <span><span class="dot" style="background:#1976d2;"></span>Left Speed (right axis)</span>
+            <span><span class="dot" style="background:#388e3c;"></span>Right Speed (right axis)</span>
+            <span><span class="dot" style="background:#ff6d00;"></span>Checkpoint</span>
+            <span id="actualRateHz" class="small"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col right">
+        <div class="box" style="font-weight:700;">Telemetry (live)</div>
+        <div class="telemetry-grid" id="telemetryGrid">
+          <div class="telemetry-item"><div>QTR 0</div><div class="value" id="qtr0">-</div></div>
+          <div class="telemetry-item"><div>QTR 1</div><div class="value" id="qtr1">-</div></div>
+          <div class="telemetry-item"><div>QTR 2</div><div class="value" id="qtr2">-</div></div>
+          <div class="telemetry-item"><div>QTR 3</div><div class="value" id="qtr3">-</div></div>
+          <div class="telemetry-item"><div>QTR 4</div><div class="value" id="qtr4">-</div></div>
+          <div class="telemetry-item"><div>Sensor Error</div><div class="value" id="sensorError">-</div></div>
+          <div class="telemetry-item"><div>Left Speed</div><div class="value" id="leftSpeed">-</div></div>
+          <div class="telemetry-item"><div>Right Speed</div><div class="value" id="rightSpeed">-</div></div>
+          <div class="telemetry-item"><div>Battery V</div><div class="value" id="batteryVoltageOut">-</div></div>
+          <div class="telemetry-item"><div>P</div><div class="value" id="pOut">-</div></div>
+          <div class="telemetry-item"><div>I</div><div class="value" id="iOut">-</div></div>
+          <div class="telemetry-item"><div>D</div><div class="value" id="dOut">-</div></div>
+          <div class="telemetry-item"><div>Normal motor speed</div><div class="value" id="motorSpeedOut">-</div></div>
+          <div class="telemetry-item"><div>Checkpoints</div><div class="value" id="checkpointCounterOut">-</div></div>
+          <div class="telemetry-item"><div>Last checkpoint ms</div><div class="value" id="checkpointTimeMsOut">-</div></div>
+        </div>
+        <details style="margin-top:8px;">
+          <summary>advanced telemetry</summary>
+          <div class="telemetry-grid" style="margin-top:8px;">
+            <div class="telemetry-item"><div>Servo rail V</div><div class="value" id="servoRailVoltageOut">-</div></div>
+            <div class="telemetry-item"><div>M1 current A</div><div class="value" id="m1CurrentOut">-</div></div>
+            <div class="telemetry-item"><div>M2 current A</div><div class="value" id="m2CurrentOut">-</div></div>
+            <div class="telemetry-item"><div>Drive loop Hz (target)</div><div class="value" id="driveLoopHzTargetOut">-</div></div>
+            <div class="telemetry-item"><div>Telemetry Hz (target)</div><div class="value" id="telemetryHzTargetOut">-</div></div>
+            <div class="telemetry-item"><div>Drive loop Hz (measured)</div><div class="value" id="driveLoopHzMeasuredOut">-</div></div>
+            <div class="telemetry-item"><div>Drive loop exec us</div><div class="value" id="driveLoopExecMeasuredOut">-</div></div>
+            <div class="telemetry-item"><div>Telemetry Hz (measured)</div><div class="value" id="telemetryHzMeasuredOut">-</div></div>
+            <div class="telemetry-item"><div><span class="hint" title="Longest single pass of the telemetry task in the last second, covering HTTP/WebSocket servicing, supply/current sampling and the telemetry broadcast.">Telemetry exec us (peak)</span></div><div class="value" id="telemetryExecUsPeakOut">-</div></div>
+            <div class="telemetry-item"><div>Timestamp ms</div><div class="value" id="timestampMs">-</div></div>
+          </div>
+        </details>
+        <div class="box">
+          <label for="showCheckpointReport"><input id="showCheckpointReport" type="checkbox">Checkpoint timing</label>
+          <div id="checkpointReport" class="checkpoint-report-list" hidden></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="console-wrap">
+      <button id="clearConsoleBtn" class="btn-light">Clear Console</button>
+      <div id="messages" class="console" aria-live="polite">Ready. Click Connect to start.</div>
+    </div>
+  </div>
+
+  <script>
+    const WS_PORT = 81;
+    const MAX_SAMPLES = 15000;
+    const MAX_CHECKPOINTS = 1000;
+    const TRIM_SAMPLES = 1000;
+    const RATE_WINDOW_MS = 5000;
+
+    let ws = null;
+    let plotWindowSec = 60;
+
+    let errBuf = [];
+    let leftBuf = [];
+    let rightBuf = [];
+    let timeBuf = [];
+    let checkpoints = [];
+    let lastCheckpointCounter = 0;
+
+    let telePktTimes = [];
+
+    const $ = (id) => document.getElementById(id);
+
+    function addMsg(text) {
+      const messagesEl = $('messages');
+      if (!messagesEl) return;
+      const stamp = new Date().toLocaleTimeString('de-DE');
+      messagesEl.textContent = `${stamp} - ${text}\n${messagesEl.textContent}`.slice(0, 9000);
+    }
+
+    function currentWsUrl() {
+      const scheme = location.protocol === 'https:' ? 'wss://' : 'ws://';
+      return `${scheme}${location.hostname}:${WS_PORT}`;
+    }
+
+    function isOpen() {
+      return ws && ws.readyState === WebSocket.OPEN;
+    }
+
+    function updateStatus(text, connected) {
+      const statusEl = $('statusText');
+      statusEl.textContent = `Status: ${text}`;
+      statusEl.className = `status ${connected ? 'connected' : 'disconnected'}`;
+      $('connBtn').textContent = connected ? 'Disconnect' : 'Connect';
+      $('sendParamsBtn').disabled = !connected;
+    }
+
+    function resetTelemetryData() {
+      errBuf = [];
+      leftBuf = [];
+      rightBuf = [];
+      timeBuf = [];
+      checkpoints = [];
+      telePktTimes = [];
+      lastCheckpointCounter = 0;
+      $('lastUpdate').textContent = 'No telemetry yet';
+      $('actualRateHz').textContent = '';
+    }
+
+    function connect() {
+      if (ws) return;
+      const url = currentWsUrl();
+      addMsg(`Connecting to ${url}`);
+      const socket = new WebSocket(url);
+      ws = socket;
+      socket.binaryType = 'arraybuffer';
+
+      socket.onopen = () => {
+        resetTelemetryData();
+        addMsg('Connected');
+        updateStatus('Connected', true);
+        requestCurrentParams();
+      };
+
+      socket.onclose = () => {
+        if (ws !== socket) return;
+        addMsg('Disconnected');
+        updateStatus('Disconnected', false);
+        ws = null;
+      };
+
+      socket.onerror = () => addMsg('WebSocket error');
+
+      socket.onmessage = (ev) => {
+        if (ev.data instanceof ArrayBuffer) {
+          handleTelemetryBin(ev.data);
+          return;
+        }
+        if (ev.data instanceof Blob) {
+          ev.data.arrayBuffer().then(handleTelemetryBin);
+          return;
+        }
+        handleTextMessage(String(ev.data || '').trim());
+      };
+
+      updateStatus('Connecting...', false);
+    }
+
+    function disconnect() {
+      if (!ws) return;
+      try { ws.close(); } catch (_) {}
+    }
+
+    function toggleConnection() {
+      if (ws) {
+        disconnect();
+        return;
+      }
+      connect();
+    }
+
+    function requestCurrentParams() {
+      if (!isOpen()) {
+        addMsg('Not connected.');
+        return;
+      }
+      ws.send('command=get_params');
+    }
+
+    function sendRobotCommand(command) {
+      if (!isOpen()) {
+        addMsg('Not connected.');
+        return;
+      }
+      ws.send(`command=${command}`);
+      addMsg(`Sent command=${command}`);
+    }
+
+    function restoreDefaults() {
+      $('pVal').value = 0.32;
+      $('iVal').value = 0.4;
+      $('dVal').value = 0.0;
+      $('motorSpeed').value = 960;
+      $('driveLoopHzInput').value = 40;
+      $('telemetryLoopHzInput').value = 20;
+      $('enableDeadzone').checked = false;
+      $('minPWMtoMove').value = 560;
+      $('stopAtCheckpoints').checked = false;
+      $('brakeWhenStopped').checked = false;
+      $('enableSupplyAndM1M2CurrentMonitoring').checked = false;
+      addMsg('Restored defaults locally.');
+    }
+
+    function sendParams() {
+      if (!isOpen()) {
+        addMsg('Not connected.');
+        return;
+      }
+
+      const csv = [
+        Number($('pVal').value) || 0,
+        Number($('iVal').value) || 0,
+        Number($('dVal').value) || 0,
+        Number($('motorSpeed').value) || 0,
+        Number($('driveLoopHzInput').value) || 1,
+        Number($('telemetryLoopHzInput').value) || 1,
+        $('enableDeadzone').checked ? 1 : 0,
+        Number($('minPWMtoMove').value) || 0,
+        $('stopAtCheckpoints').checked ? 1 : 0,
+        $('brakeWhenStopped').checked ? 1 : 0,
+        $('enableSupplyAndM1M2CurrentMonitoring').checked ? 1 : 0,
+      ].join(',');
+
+      ws.send(`params=${csv}`);
+      addMsg(`Sent params=${csv}`);
+    }
+
+    function handleTextMessage(msg) {
+      if (!msg) return;
+      if (msg.startsWith('status=')) {
+        const statusValue = msg.slice(7);
+        addMsg(`Robot status: ${statusValue}`);
+        return;
+      }
+      if (!msg.startsWith('params=')) {
+        addMsg(msg);
+        return;
+      }
+
+      const parts = msg.slice(7).split(',');
+      if (parts.length !== 11) {
+        addMsg(`Unexpected params message (${parts.length} fields): ${msg}`);
+        return;
+      }
+
+      $('pVal').value = parts[0];
+      $('iVal').value = parts[1];
+      $('dVal').value = parts[2];
+      $('motorSpeed').value = parts[3];
+      $('driveLoopHzInput').value = parts[4];
+      $('telemetryLoopHzInput').value = parts[5];
+      $('enableDeadzone').checked = parts[6] === '1';
+      $('minPWMtoMove').value = parts[7];
+      $('stopAtCheckpoints').checked = parts[8] === '1';
+      $('brakeWhenStopped').checked = parts[9] === '1';
+      $('enableSupplyAndM1M2CurrentMonitoring').checked = parts[10] === '1';
+
+      addMsg('Parameters synced from robot.');
+    }
+
+    function readU16(view, offset) { return view.getUint16(offset, true); }
+    function readU32(view, offset) { return view.getUint32(offset, true); }
+    function readI32(view, offset) { return view.getInt32(offset, true); }
+    function readF32(view, offset) { return view.getFloat32(offset, true); }
+
+    function parseTelemetryBIN(buffer) {
+      const view = new DataView(buffer);
+      let off = 0;
+
+      const magic = readU32(view, off); off += 4;
+      const version = readU16(view, off); off += 2;
+      const totalLen = readU16(view, off); off += 2;
+      if (magic !== 0x314D4C54 || version !== 4 || totalLen !== buffer.byteLength) return null;
+
+      const qtrs = [
+        readU16(view, off + 0),
+        readU16(view, off + 2),
+        readU16(view, off + 4),
+        readU16(view, off + 6),
+        readU16(view, off + 8),
+      ];
+      off += 10;
+
+      const sensorError = readI32(view, off); off += 4;
+      const leftSpeed = readI32(view, off); off += 4;
+      const rightSpeed = readI32(view, off); off += 4;
+
+      const batteryVoltageV = readF32(view, off); off += 4;
+      const servoRailVoltageV = readF32(view, off); off += 4;
+      const motorCurrentsA = [];
+      for (let m = 0; m < 2; m++) {
+        motorCurrentsA.push(readF32(view, off)); off += 4;
+      }
+
+      const P = readF32(view, off); off += 4;
+      const I = readF32(view, off); off += 4;
+      const D = readF32(view, off); off += 4;
+
+      const motorSpeed = readI32(view, off); off += 4;
+      const checkpointCounter = readI32(view, off); off += 4;
+      const checkpointTimeMs = readI32(view, off); off += 4;
+      const runCheckpointCount = readI32(view, off); off += 4;
+      const runCheckpointElapsedMs = [];
+      for (let checkpoint = 0; checkpoint < 13; checkpoint++) {
+        runCheckpointElapsedMs.push(readU32(view, off)); off += 4;
+      }
+
+      const driveLoopHzTarget = readI32(view, off); off += 4;
+      const telemetryHzTarget = readI32(view, off); off += 4;
+
+      const driveLoopHzMeasured = readF32(view, off); off += 4;
+      const driveLoopExecUsMeasured = readF32(view, off); off += 4;
+      const telemetryHzMeasured = readF32(view, off); off += 4;
+      const telemetryExecUsPeak = readF32(view, off); off += 4;
+
+      const timestamp = readU32(view, off); off += 4;
+
+      return {
+        timestamp,
+        qtrs,
+        sensorError,
+        leftSpeed,
+        rightSpeed,
+        batteryVoltageV,
+        servoRailVoltageV,
+        motorCurrentsA,
+        P,
+        I,
+        D,
+        motorSpeed,
+        driveLoopHzTarget,
+        telemetryHzTarget,
+        checkpointCounter,
+        checkpointTimeMs,
+        runCheckpointCount,
+        runCheckpointElapsedMs,
+        driveLoopHzMeasured,
+        driveLoopExecUsMeasured,
+        telemetryHzMeasured,
+        telemetryExecUsPeak,
+      };
+    }
+
+    function pushBuf(buf, value) {
+      buf.push(value);
+      if (buf.length > MAX_SAMPLES) buf.splice(0, TRIM_SAMPLES);
+    }
+
+    function pushTelemetryRow(obj) {
+      pushBuf(errBuf, Number(obj.sensorError) || 0);
+      pushBuf(leftBuf, Number(obj.leftSpeed) || 0);
+      pushBuf(rightBuf, Number(obj.rightSpeed) || 0);
+      pushBuf(timeBuf, Number(obj.timestamp) || 0);
+    }
+
+    function updateReceiveRate() {
+      const now = Date.now();
+      telePktTimes.push(now);
+      while (telePktTimes.length && (now - telePktTimes[0]) > RATE_WINDOW_MS) {
+        telePktTimes.shift();
+      }
+
+      const n = telePktTimes.length;
+      const elapsedSec = Math.max(0.25, Math.min(RATE_WINDOW_MS, now - (telePktTimes[0] || now)) / 1000);
+      const hz = n / elapsedSec;
+      $('actualRateHz').textContent = `(${hz.toFixed(1)} Hz)`;
+    }
+
+    function formatElapsedMs(elapsedMs) {
+      const minutes = Math.floor(elapsedMs / 60000).toString().padStart(2, '0');
+      const seconds = Math.floor((elapsedMs % 60000) / 1000).toString().padStart(2, '0');
+      const milliseconds = (elapsedMs % 1000).toString().padStart(3, '0');
+      return `${minutes}:${seconds}:${milliseconds}`;
+    }
+
+    function initializeCheckpointReport() {
+      const report = $('checkpointReport');
+      const startLabel = document.createElement('span');
+      const startSeparator = document.createElement('span');
+      const startTime = document.createElement('span');
+      startLabel.textContent = 'start';
+      startSeparator.textContent = '|';
+      startTime.textContent = '00:00:000';
+      report.append(startLabel, startSeparator, startTime);
+
+      for (let checkpoint = 1; checkpoint <= 13; checkpoint++) {
+        const label = document.createElement('span');
+        const separator = document.createElement('span');
+        const time = document.createElement('span');
+        label.textContent = `${checkpoint}. Checkpoint`;
+        separator.textContent = '|';
+        time.id = `checkpointReportTime${checkpoint}`;
+        time.textContent = 'N/A';
+        report.append(label, separator, time);
+      }
+
+      $('showCheckpointReport').addEventListener('change', (event) => {
+        report.hidden = !event.target.checked;
+      });
+    }
+
+    function updateCheckpointReport(telemetry) {
+      const checkpointCount = Math.max(0, Math.min(13, telemetry.runCheckpointCount));
+      for (let checkpoint = 0; checkpoint < 13; checkpoint++) {
+        const time = $(`checkpointReportTime${checkpoint + 1}`);
+        time.textContent = checkpoint < checkpointCount
+          ? formatElapsedMs(telemetry.runCheckpointElapsedMs[checkpoint])
+          : 'N/A';
+      }
+    }
+
+    function handleTelemetryBin(buffer) {
+      const t = parseTelemetryBIN(buffer);
+      if (!t) return;
+
+      $('timestampMs').textContent = String(t.timestamp);
+      $('qtr0').textContent = String(t.qtrs[0]);
+      $('qtr1').textContent = String(t.qtrs[1]);
+      $('qtr2').textContent = String(t.qtrs[2]);
+      $('qtr3').textContent = String(t.qtrs[3]);
+      $('qtr4').textContent = String(t.qtrs[4]);
+
+      $('sensorError').textContent = String(t.sensorError);
+      $('leftSpeed').textContent = String(t.leftSpeed);
+      $('rightSpeed').textContent = String(t.rightSpeed);
+
+      const fmtOrDash = (value, digits) => Number.isFinite(value) ? value.toFixed(digits) : '-';
+      $('batteryVoltageOut').textContent = fmtOrDash(t.batteryVoltageV, 2);
+      $('servoRailVoltageOut').textContent = fmtOrDash(t.servoRailVoltageV, 2);
+      for (let m = 0; m < 2; m++) {
+        $(`m${m + 1}CurrentOut`).textContent = fmtOrDash(t.motorCurrentsA[m], 3);
+      }
+
+      $('pOut').textContent = Number(t.P).toFixed(5);
+      $('iOut').textContent = Number(t.I).toFixed(5);
+      $('dOut').textContent = Number(t.D).toFixed(5);
+      $('motorSpeedOut').textContent = String(t.motorSpeed);
+      $('driveLoopHzTargetOut').textContent = String(t.driveLoopHzTarget);
+      $('telemetryHzTargetOut').textContent = String(t.telemetryHzTarget);
+
+      $('checkpointCounterOut').textContent = String(t.checkpointCounter);
+      $('checkpointTimeMsOut').textContent = String(t.checkpointTimeMs);
+      updateCheckpointReport(t);
+
+      $('driveLoopHzMeasuredOut').textContent = Number(t.driveLoopHzMeasured).toFixed(2);
+      $('driveLoopExecMeasuredOut').textContent = Number(t.driveLoopExecUsMeasured).toFixed(1);
+      $('telemetryHzMeasuredOut').textContent = Number(t.telemetryHzMeasured).toFixed(2);
+      $('telemetryExecUsPeakOut').textContent = Number(t.telemetryExecUsPeak).toFixed(1);
+
+      pushTelemetryRow(t);
+
+      if (t.checkpointCounter > lastCheckpointCounter) {
+        checkpoints.push({ t: t.timestamp, n: t.checkpointCounter });
+        if (checkpoints.length > MAX_CHECKPOINTS) checkpoints.shift();
+        lastCheckpointCounter = t.checkpointCounter;
+      }
+
+      $('lastUpdate').textContent = new Date().toLocaleTimeString('de-DE');
+      updateReceiveRate();
+    }
+
+    initializeCheckpointReport();
+
+    (function setupCanvasPlot() {
+      const canvas = $('chartCanvas');
+      const COLORS = {
+        axis: '#888',
+        grid: '#ececec',
+        text: '#666',
+        error: '#d32f2f',
+        left: '#1976d2',
+        right: '#388e3c',
+        checkpoint: '#ff6d00'
+      };
+
+      const Y_ERR_MIN = -2000;
+      const Y_ERR_MAX = 2000;
+      const Y_SPD_MIN = -4095;
+      const Y_SPD_MAX = 4095;
+      const PAD = { left: 58, right: 50, top: 12, bottom: 44 };
+
+      let dpr = 1;
+
+      function syncPixels() {
+        dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+        const w = Math.round(canvas.clientWidth * dpr);
+        const h = Math.round(canvas.clientHeight * dpr);
+        if (canvas.width !== w) canvas.width = w;
+        if (canvas.height !== h) canvas.height = h;
+      }
+
+      function xToPx(x, xMin, xMax) {
+        const w = (canvas.width / dpr) - PAD.left - PAD.right;
+        if (xMax <= xMin) return PAD.left;
+        return PAD.left + ((x - xMin) / (xMax - xMin)) * w;
+      }
+
+      function yErrToPx(y) {
+        const h = (canvas.height / dpr) - PAD.top - PAD.bottom;
+        return PAD.top + (1 - (y - Y_ERR_MIN) / (Y_ERR_MAX - Y_ERR_MIN)) * h;
+      }
+
+      function ySpdToPx(y) {
+        const h = (canvas.height / dpr) - PAD.top - PAD.bottom;
+        return PAD.top + (1 - (y - Y_SPD_MIN) / (Y_SPD_MAX - Y_SPD_MIN)) * h;
+      }
+
+      function drawGrid(ctx, xMin, xMax) {
+        const cw = canvas.width / dpr;
+        const ch = canvas.height / dpr;
+
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = COLORS.grid;
+        ctx.fillStyle = COLORS.text;
+        ctx.font = '12px Arial';
+        ctx.textBaseline = 'middle';
+
+        for (let y = -2000; y <= 2000; y += 1000) {
+          const py = yErrToPx(y);
+          ctx.beginPath();
+          ctx.moveTo(PAD.left, py);
+          ctx.lineTo(cw - PAD.right, py);
+          ctx.stroke();
+          ctx.textAlign = 'right';
+          ctx.fillText(String(y), PAD.left - 6, py);
+        }
+
+        ctx.textAlign = 'left';
+        for (const y of [Y_SPD_MIN, 0, Y_SPD_MAX]) {
+          const py = ySpdToPx(y);
+          ctx.fillText(String(y), cw - PAD.right + 4, py);
+        }
+
+        for (let relativeSec = -plotWindowSec; relativeSec <= 0; relativeSec += 5) {
+          const timestampMs = xMax + (relativeSec * 1000);
+          const x = xToPx(timestampMs, xMin, xMax);
+          ctx.beginPath();
+          ctx.moveTo(x, PAD.top);
+          ctx.lineTo(x, ch - PAD.bottom);
+          ctx.stroke();
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          ctx.fillText(`${relativeSec.toFixed(0)}s`, x, ch - PAD.bottom + 6);
+          ctx.textBaseline = 'middle';
+        }
+
+        ctx.strokeStyle = COLORS.axis;
+        ctx.beginPath();
+        ctx.moveTo(PAD.left, PAD.top);
+        ctx.lineTo(PAD.left, ch - PAD.bottom);
+        ctx.lineTo(cw - PAD.right, ch - PAD.bottom);
+        ctx.stroke();
+      }
+
+      function drawSeries(ctx, xs, ys, xMin, xMax, color, yToPx) {
+        if (xs.length < 2 || ys.length < 2) return;
+        const startIdx = Math.max(0, xs.length - ys.length);
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+
+        let moved = false;
+        for (let i = 0; i < ys.length; i++) {
+          const ti = startIdx + i;
+          if (ti >= xs.length) break;
+          const x = xToPx(xs[ti], xMin, xMax);
+          const y = yToPx(ys[i]);
+          if (!moved) {
+            ctx.moveTo(x, y);
+            moved = true;
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        if (moved) ctx.stroke();
+      }
+
+      function drawCheckpoints(ctx, xMin, xMax) {
+        const ch = canvas.height / dpr;
+        ctx.strokeStyle = COLORS.checkpoint;
+        ctx.fillStyle = COLORS.checkpoint;
+        ctx.lineWidth = 1;
+        ctx.font = '11px Arial';
+
+        for (const cp of checkpoints) {
+          if (cp.t < xMin || cp.t > xMax) continue;
+          const x = xToPx(cp.t, xMin, xMax);
+          ctx.beginPath();
+          ctx.moveTo(x, PAD.top);
+          ctx.lineTo(x, ch - PAD.bottom);
+          ctx.stroke();
+          ctx.fillText(String(cp.n), x + 3, ch - PAD.bottom - 10);
+        }
+      }
+
+      function draw() {
+        syncPixels();
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const cw = canvas.width / dpr;
+        const ch = canvas.height / dpr;
+
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, cw, ch);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, cw, ch);
+
+        const xMax = timeBuf.length ? timeBuf[timeBuf.length - 1] : 0;
+        const xMin = xMax - (plotWindowSec * 1000);
+
+        drawGrid(ctx, xMin, xMax);
+        drawSeries(ctx, timeBuf, errBuf, xMin, xMax, COLORS.error, yErrToPx);
+        drawSeries(ctx, timeBuf, leftBuf, xMin, xMax, COLORS.left, ySpdToPx);
+        drawSeries(ctx, timeBuf, rightBuf, xMin, xMax, COLORS.right, ySpdToPx);
+        drawCheckpoints(ctx, xMin, xMax);
+      }
+
+      function tick() {
+        draw();
+        requestAnimationFrame(tick);
+      }
+
+      requestAnimationFrame(tick);
+    })();
+
+    function saveCanvasPNG() {
+      const canvas = $('chartCanvas');
+      if (!canvas) return;
+
+      const temp = document.createElement('canvas');
+      temp.width = canvas.width;
+      temp.height = canvas.height;
+      const ctx = temp.getContext('2d');
+      if (!ctx) return;
+
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, temp.width, temp.height);
+      ctx.drawImage(canvas, 0, 0);
+
+      const now = new Date();
+      const ts = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}` +
+        `-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+      const filename = `telemetry_${ts}.png`;
+
+      if (temp.toBlob) {
+        temp.toBlob((blob) => {
+          if (!blob) return;
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = filename;
+          a.click();
+          URL.revokeObjectURL(a.href);
+        }, 'image/png');
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      restoreDefaults();
+      updateStatus('Disconnected', false);
+      $('apInfo').textContent = `Open this page from AP host ${location.hostname} and click Connect.`;
+
+      const clearBtn = $('clearConsoleBtn');
+      clearBtn.addEventListener('click', () => {
+        $('messages').textContent = '';
+      });
+
+      const plotWindowInput = $('plotWindowSec');
+      plotWindowInput.addEventListener('change', () => {
+        const value = Number(plotWindowInput.value) || 60;
+        plotWindowSec = Math.max(5, Math.min(300, value));
+        plotWindowInput.value = String(plotWindowSec);
+      });
+
+      addMsg('Ready. Click Connect to start.');
+    });
+  </script>
+</body>
+</html>
 )rawliteral";
 
 #endif
-

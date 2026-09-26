@@ -67,8 +67,9 @@ struct __attribute__((packed)) TelemetryBin
 
     int32_t motorSpeed;
     int32_t checkpointCounter;
-    int32_t horizontalLineCounter;
     int32_t lastCheckpointTimeMs;
+    int32_t runCheckpointCount;
+    uint32_t runCheckpointElapsedMs[13];
 
     int32_t driveLoopHzTarget;
     int32_t telemetryHzTarget;
@@ -174,7 +175,7 @@ static inline TelemetryBin makeTelemetryBin()
 {
     TelemetryBin telemetry{};
     telemetry.magic = 0x314D4C54;
-    telemetry.version = 3;
+    telemetry.version = 4;
     telemetry.total_len = sizeof(TelemetryBin);
 
     telemetry.qtr0 = qtrSensorValues[0];
@@ -200,8 +201,12 @@ static inline TelemetryBin makeTelemetryBin()
 
     telemetry.motorSpeed = defaultMotorSpeed;
     telemetry.checkpointCounter = checkpointCounter;
-    telemetry.horizontalLineCounter = horizontalLineCounter;
     telemetry.lastCheckpointTimeMs = lastCheckpointTimeMs;
+    telemetry.runCheckpointCount = constrain(checkpointCounter - runStartCheckpointCounter, 0, 13);
+    for (uint8_t checkpoint = 0; checkpoint < 13; ++checkpoint)
+    {
+        telemetry.runCheckpointElapsedMs[checkpoint] = runCheckpointElapsedMs[checkpoint];
+    }
 
     telemetry.driveLoopHzTarget = driveLoopHzTarget;
     telemetry.telemetryHzTarget = telemetryHzTarget;
@@ -306,7 +311,16 @@ void applyWebCommand(const char *payload, uint8_t clientNum)
 {
     if (strncmp(payload, "command=start", 13) == 0)
     {
-        robotMotionEnabled = true;
+        if (!robotMotionEnabled)
+        {
+            runStartTimeMs = millis();
+            runStartCheckpointCounter = checkpointCounter;
+            for (uint8_t checkpoint = 0; checkpoint < 13; ++checkpoint)
+            {
+                runCheckpointElapsedMs[checkpoint] = 0;
+            }
+            robotMotionEnabled = true;
+        }
         webSocketServer.sendTXT(clientNum, "status=moving");
         return;
     }

@@ -71,6 +71,9 @@ void setup()
     blinkWarningPattern(128, 0, 255, 8);  // violet: 8 blinks for motor shield init failure
   }
 
+  shield.servo(3).setAngleRange(180.0f);
+  shield.servo(3).setAngle(0.0f);
+
   maybeBlinkForBatteryLowVoltageWarning();
 
 #if ENABLE_WEB_INTERFACE
@@ -112,7 +115,7 @@ void loop()
   {
     lastDriveTime = micros();
     const uint32_t startedAtUs = micros();
-    drivingLoop(pid, qtr, shield.motor(1), shield.motor(2));
+    drivingLoop(pid, qtr, shield.motor(1), shield.motor(2), shield);
     driveLoopExecUsMeasured = static_cast<float>(micros() - startedAtUs);
 
     ++driveLoopCounter;

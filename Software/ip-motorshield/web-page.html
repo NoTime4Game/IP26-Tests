@@ -234,6 +234,17 @@
       font-weight: 700;
     }
 
+    .checkpoint-report-list {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto minmax(9ch, auto);
+      gap: 4px 8px;
+      margin-top: 8px;
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    .checkpoint-report-list[hidden] { display: none; }
+
     .console-wrap {
       position: relative;
     }
@@ -412,6 +423,10 @@
             <div class="telemetry-item"><div>Timestamp ms</div><div class="value" id="timestampMs">-</div></div>
           </div>
         </details>
+        <div class="box">
+          <label for="showCheckpointReport"><input id="showCheckpointReport" type="checkbox">Checkpoint timing</label>
+          <div id="checkpointReport" class="checkpoint-report-list" hidden></div>
+        </div>
       </div>
     </div>
 
@@ -631,7 +646,7 @@
       const magic = readU32(view, off); off += 4;
       const version = readU16(view, off); off += 2;
       const totalLen = readU16(view, off); off += 2;
-      if (magic !== 0x314D4C54 || version !== 3 || totalLen !== buffer.byteLength) return null;
+      if (magic !== 0x314D4C54 || version !== 4 || totalLen !== buffer.byteLength) return null;
 
       const qtrs = [
         readU16(view, off + 0),
@@ -660,6 +675,11 @@
       const motorSpeed = readI32(view, off); off += 4;
       const checkpointCounter = readI32(view, off); off += 4;
       const checkpointTimeMs = readI32(view, off); off += 4;
+      const runCheckpointCount = readI32(view, off); off += 4;
+      const runCheckpointElapsedMs = [];
+      for (let checkpoint = 0; checkpoint < 13; checkpoint++) {
+        runCheckpointElapsedMs.push(readU32(view, off)); off += 4;
+      }
 
       const driveLoopHzTarget = readI32(view, off); off += 4;
       const telemetryHzTarget = readI32(view, off); off += 4;
@@ -688,6 +708,8 @@
         telemetryHzTarget,
         checkpointCounter,
         checkpointTimeMs,
+        runCheckpointCount,
+        runCheckpointElapsedMs,
         driveLoopHzMeasured,
         driveLoopExecUsMeasured,
         telemetryHzMeasured,
@@ -718,6 +740,49 @@
       const elapsedSec = Math.max(0.25, Math.min(RATE_WINDOW_MS, now - (telePktTimes[0] || now)) / 1000);
       const hz = n / elapsedSec;
       $('actualRateHz').textContent = `(${hz.toFixed(1)} Hz)`;
+    }
+
+    function formatElapsedMs(elapsedMs) {
+      const minutes = Math.floor(elapsedMs / 60000).toString().padStart(2, '0');
+      const seconds = Math.floor((elapsedMs % 60000) / 1000).toString().padStart(2, '0');
+      const milliseconds = (elapsedMs % 1000).toString().padStart(3, '0');
+      return `${minutes}:${seconds}:${milliseconds}`;
+    }
+
+    function initializeCheckpointReport() {
+      const report = $('checkpointReport');
+      const startLabel = document.createElement('span');
+      const startSeparator = document.createElement('span');
+      const startTime = document.createElement('span');
+      startLabel.textContent = 'start';
+      startSeparator.textContent = '|';
+      startTime.textContent = '00:00:000';
+      report.append(startLabel, startSeparator, startTime);
+
+      for (let checkpoint = 1; checkpoint <= 13; checkpoint++) {
+        const label = document.createElement('span');
+        const separator = document.createElement('span');
+        const time = document.createElement('span');
+        label.textContent = `${checkpoint}. Checkpoint`;
+        separator.textContent = '|';
+        time.id = `checkpointReportTime${checkpoint}`;
+        time.textContent = 'N/A';
+        report.append(label, separator, time);
+      }
+
+      $('showCheckpointReport').addEventListener('change', (event) => {
+        report.hidden = !event.target.checked;
+      });
+    }
+
+    function updateCheckpointReport(telemetry) {
+      const checkpointCount = Math.max(0, Math.min(13, telemetry.runCheckpointCount));
+      for (let checkpoint = 0; checkpoint < 13; checkpoint++) {
+        const time = $(`checkpointReportTime${checkpoint + 1}`);
+        time.textContent = checkpoint < checkpointCount
+          ? formatElapsedMs(telemetry.runCheckpointElapsedMs[checkpoint])
+          : 'N/A';
+      }
     }
 
     function handleTelemetryBin(buffer) {
@@ -751,6 +816,7 @@
 
       $('checkpointCounterOut').textContent = String(t.checkpointCounter);
       $('checkpointTimeMsOut').textContent = String(t.checkpointTimeMs);
+      updateCheckpointReport(t);
 
       $('driveLoopHzMeasuredOut').textContent = Number(t.driveLoopHzMeasured).toFixed(2);
       $('driveLoopExecMeasuredOut').textContent = Number(t.driveLoopExecUsMeasured).toFixed(1);
@@ -768,6 +834,8 @@
       $('lastUpdate').textContent = new Date().toLocaleTimeString('de-DE');
       updateReceiveRate();
     }
+
+    initializeCheckpointReport();
 
     (function setupCanvasPlot() {
       const canvas = $('chartCanvas');

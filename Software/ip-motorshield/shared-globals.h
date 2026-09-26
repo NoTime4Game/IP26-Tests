@@ -19,8 +19,10 @@ extern int driveLoopHzTarget;
 extern int telemetryHzTarget;
 
 extern int checkpointCounter;
-extern int horizontalLineCounter;
 extern int lastCheckpointTimeMs;
+extern uint32_t runStartTimeMs;
+extern int runStartCheckpointCounter;
+extern uint32_t runCheckpointElapsedMs[13];
 extern bool stopAtCheckpoints;
 extern bool robotMotionEnabled;
 extern bool brakeWhenStopped;

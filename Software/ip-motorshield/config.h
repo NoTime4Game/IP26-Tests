@@ -3,11 +3,11 @@
 
 // Set to 1 to enable the WiFi web interface for live telemetry and remote control.
 // Set to 0 for standalone mode: the robot auto-starts after calibration with no WiFi.
-#define ENABLE_WEB_INTERFACE 0
+#define ENABLE_WEB_INTERFACE 1
 
 constexpr char accessPointNamePrefix[] = "IP-Motorshield";  // The WiFi SSID will be this prefix followed by the last 3 bytes of the MAC address, e.g. "IP-Motorshield-1A2B3C".
-constexpr char accessPointTeamName[] = "";  // Insert team name here, e.g. "TeamA"
-constexpr char accessPointPassword[] = "motorshield";  // You should change the default password such that no other person can easily connect to your system and control it.
+constexpr char accessPointTeamName[] = "BJANG";  // Insert team name here, e.g. "TeamA"
+constexpr char accessPointPassword[] = "BJANG-Delivery";  // You should change the default password such that no other person can easily connect to your system and control it.
 
 // Keep the M1/M2 LEDC PWM aligned with the M3-M6 PCA9685 target frequency.
 constexpr int pwmFreq = 1526;
